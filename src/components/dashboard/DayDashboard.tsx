@@ -6,7 +6,10 @@ import { MacroCard } from "./MacroCard";
 import { MealSection } from "./MealSection";
 import { EmptyState } from "./EmptyState";
 import { AddFoodModal } from "../modals/AddFoodModal";
+import { AddChoiceModal } from "../modals/AddChoiceModal";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { ScannerEntryCard } from "../scanner/ScannerEntryCard";
+import { FoodScannerModal } from "../scanner/FoodScannerModal";
 import { MEAL_ORDER, MEAL_META } from "../../lib/meals";
 import { formatRemaining, progressPercent, sumCalories, sumProtein } from "../../lib/calculations";
 import { getStatusMessage } from "../../lib/messages";
@@ -36,6 +39,8 @@ export function DayDashboard({
   const [pendingDelete, setPendingDelete] = useState<FoodEntry | null>(null);
   const [justAdded, setJustAdded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [addChoiceOpen, setAddChoiceOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const totalCalories = useMemo(() => sumCalories(foods), [foods]);
   const totalProtein = useMemo(() => sumProtein(foods), [foods]);
@@ -74,6 +79,15 @@ export function DayDashboard({
     setPendingDelete(null);
   };
 
+  const handleScanConfirm = async (
+    scanned: { name: string; calories: number; protein: number; meal: Meal; time: string; note?: string }[]
+  ) => {
+    await Promise.all(scanned.map((item) => addFood(date, item)));
+    setScannerOpen(false);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 800);
+  };
+
   return (
     <div className="flex flex-col gap-5">
       {/* Summary card */}
@@ -95,6 +109,8 @@ export function DayDashboard({
           </div>
         </div>
       </div>
+
+      <ScannerEntryCard onClick={() => setScannerOpen(true)} />
 
       {/* Macro cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -129,7 +145,7 @@ export function DayDashboard({
           <div className="relative">
             <button
               type="button"
-              onClick={() => openAddModal("breakfast")}
+              onClick={() => setAddChoiceOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-full bg-[var(--primary)] text-white font-semibold px-4 py-2 shadow-[var(--shadow-cute)] transition-transform hover:scale-[1.02] active:scale-95"
             >
               <Plus size={16} /> Add Food
@@ -166,7 +182,7 @@ export function DayDashboard({
             title={emptyTitle}
             subtitle={emptySubtitle}
             actionLabel="Add your first food"
-            onAction={() => openAddModal("breakfast")}
+            onAction={() => setAddChoiceOpen(true)}
           />
         ) : (
           <div className="flex flex-col gap-5">
@@ -204,6 +220,31 @@ export function DayDashboard({
           danger
           onConfirm={handleConfirmDelete}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {addChoiceOpen && (
+        <AddChoiceModal
+          onClose={() => setAddChoiceOpen(false)}
+          onChooseScan={() => {
+            setAddChoiceOpen(false);
+            setScannerOpen(true);
+          }}
+          onChooseManual={() => {
+            setAddChoiceOpen(false);
+            openAddModal("breakfast");
+          }}
+        />
+      )}
+
+      {scannerOpen && (
+        <FoodScannerModal
+          onClose={() => setScannerOpen(false)}
+          onRequestManual={() => {
+            setScannerOpen(false);
+            openAddModal("breakfast");
+          }}
+          onConfirm={handleScanConfirm}
         />
       )}
     </div>

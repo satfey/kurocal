@@ -23,3 +23,22 @@ export type UserSettings = {
 };
 
 export type FoodsByDate = Record<string, FoodEntry[]>;
+
+export type ConfidenceLevel = "high" | "medium" | "low";
+
+export type FoodAnalysisItem = {
+  name: string;
+  portion: string;
+  calories: number;
+  protein: number;
+  confidence: ConfidenceLevel;
+};
+
+export type FoodAnalysis = {
+  description: string;
+  foods: FoodAnalysisItem[];
+  totalCalories: number;
+  totalProtein: number;
+  overallConfidence: ConfidenceLevel;
+  notes: string;
+};
